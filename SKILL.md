@@ -12,7 +12,7 @@ This skill generates a professional 2-slide brand guide for DJs based on structu
 - **Slide 1**: Brand moodboard with 4 AI image generation prompts and brand narrative
 - **Slide 2**: Color palette with primary color, supporting colors (hex + CMYK), and description
 
-**Current limitation:** Images are represented as text prompts in placeholder boxes. User manually generates images (or uses Fal.ai integration).
+**Images are now generated automatically** via Fal.ai's Nano Banana Pro API integration. FAL_KEY environment variable is required.
 
 ## Input Format
 
@@ -47,7 +47,7 @@ The skill expects a JSON file with this structure:
 ### Step 1: Generate Image Prompts Meta-Prompt
 
 ```bash
-python generate_moodboard.py input.json
+node generate_moodboard.js input.json
 ```
 
 Creates a meta-prompt that an LLM uses to generate 4 distinct image prompts.
@@ -56,10 +56,25 @@ Creates a meta-prompt that an LLM uses to generate 4 distinct image prompts.
 
 **Next:** Copy meta-prompt → paste into Claude/GPT-4 → save JSON response as `prompts.json`
 
-### Step 2: Generate Color Palette Meta-Prompt
+### Step 2: Generate Images with Fal.ai (MANDATORY)
 
 ```bash
-python generate_color_palette.py input.json
+FAL_KEY=your_api_key node generate_images.js prompts.json input.json
+```
+
+Generates actual images from the prompts using Fal.ai's Nano Banana Pro API.
+
+**Output:** `dj_name_label.png` files (one per prompt) + updated `prompts.json` with image paths
+
+**Requirements:**
+- FAL_KEY environment variable must be set
+- Images are cached - will skip if already generated
+- Retries 3 times on API failures
+
+### Step 3: Generate Color Palette Meta-Prompt
+
+```bash
+node generate_color_palette.js input.json
 ```
 
 Creates a meta-prompt that an LLM uses to generate a color palette with hex codes and description.
@@ -81,13 +96,13 @@ Expected JSON format:
 }
 ```
 
-### Step 3: Generate PowerPoint
+### Step 4: Generate PowerPoint
 
 ```bash
 node create_moodboard_pptx.js prompts.json input.json colors.json
 ```
 
-Creates a 2-slide PowerPoint presentation.
+Creates a 2-slide PowerPoint presentation with embedded generated images.
 
 **Output:** `dj_name_brand_guide.pptx`
 
@@ -95,10 +110,11 @@ Creates a 2-slide PowerPoint presentation.
 
 ### Slide 1: Brand Moodboard
 - Title: "[DJ NAME] - OVERALL BRAND MOODBOARD"
-- 4 image prompt boxes (2x2 grid) with labels
-- Each box contains full AI image generation prompt
+- 4 generated images (2x2 grid) with labels, displayed with 16:9 aspect ratio
+- Each image generated from AI prompts via Fal.ai
 - Brand narrative paragraph
 - Typography: Fjalla One (headers), Helvetica Neue (body)
+- Supports arbitrary number of prompts (grid expands dynamically)
 
 ### Slide 2: Color Palette
 - Title: "BRAND COLOR PALETTE"
@@ -123,21 +139,32 @@ Creates a 2-slide PowerPoint presentation.
 
 ## Technical Notes
 
-- Uses meta-prompt approach for generating prompts and colors (fully dynamic)
+- **All JavaScript:** Fully Node.js-based workflow (no Python dependencies)
+- **Fal.ai Integration:** Uses Nano Banana Pro API for 16:9 image generation
+- **Caching:** Generated images are cached to avoid re-generation
+- **Retry Logic:** 3 retries with exponential backoff for API failures
 - Automatic hex to CMYK conversion for print specifications
 - Character limit (620) enforced by LLM via meta-prompt
 - Slide dimensions: 16:9 (10" × 5.625")
-- Requires: Node.js (pptxgenjs), Python 3
+- Requires: Node.js with pptxgenjs, @fal-ai/client, node-fetch
+
+## Environment Variables
+
+- `FAL_KEY` (REQUIRED): Your Fal.ai API key
+  - Get an API key from: https://fal.ai
+  - Set with: `export FAL_KEY=your_api_key`
+  - Or pass inline: `FAL_KEY=your_key node generate_images.js ...`
 
 ## Scripts
 
-- `generate_moodboard.py` - Creates meta-prompt for image prompts
-- `generate_color_palette.py` - Creates meta-prompt for color palette + description
-- `create_moodboard_pptx.js` - Generates 2-slide PowerPoint from JSON inputs
+- `generate_moodboard.js` - Creates meta-prompt for image prompts
+- `generate_images.js` - Generates actual images via Fal.ai API (mandatory step)
+- `generate_color_palette.js` - Creates meta-prompt for color palette + description
+- `create_moodboard_pptx.js` - Generates 2-slide PowerPoint with embedded images
 
 ## Future Enhancements
 
-- Direct image generation via Fal.ai API
 - Additional slides (Visual Pillars, Photography Style, Typography)
 - Full multi-slide brand deck
 - Automated end-to-end workflow (form → email)
+- Support for other image generation APIs
