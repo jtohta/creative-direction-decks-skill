@@ -19,10 +19,12 @@ This skill creates a 2-slide brand guide PowerPoint:
 ## Prerequisites
 
 ```bash
-# Node.js package
-npm install -g pptxgenjs
+# Install Node.js dependencies
+npm install
 
-# Python 3 (already available)
+# Set up Fal.ai API key (REQUIRED for image generation)
+export FAL_KEY=your_api_key_here
+# Get your API key from: https://fal.ai
 ```
 
 ## Complete Workflow
@@ -53,7 +55,7 @@ Create a JSON file with the DJ's brand data:
 ### Step 2: Generate Image Prompts Meta-Prompt
 
 ```bash
-python generate_moodboard.py your_dj_input.json
+node generate_moodboard.js your_dj_input.json
 ```
 
 This creates `your_dj_input_meta_prompt.txt`
@@ -62,10 +64,22 @@ Copy this meta-prompt → paste into Claude/GPT-4 → get back JSON with 4 image
 
 Save as `your_dj_prompts.json`
 
-### Step 3: Generate Color Palette Meta-Prompt
+### Step 3: Generate Images with Fal.ai (MANDATORY)
 
 ```bash
-python generate_color_palette.py your_dj_input.json
+FAL_KEY=your_api_key node generate_images.js your_dj_prompts.json your_dj_input.json
+```
+
+This generates actual images from the prompts using Fal.ai's Nano Banana Pro API:
+- Creates PNG files (e.g., `aqua_voyager_bioluminescent_jellyfish.png`)
+- Updates `your_dj_prompts.json` with image paths
+- Images are cached (will skip if already exists)
+- Retries 3 times on API failures
+
+### Step 4: Generate Color Palette Meta-Prompt
+
+```bash
+node generate_color_palette.js your_dj_input.json
 ```
 
 This creates `your_dj_input_color_palette_meta_prompt.txt`
@@ -74,23 +88,25 @@ Copy this meta-prompt → paste into Claude/GPT-4 → get back JSON with colors 
 
 Save as `your_dj_colors.json`
 
-### Step 4: Generate PowerPoint
+### Step 5: Generate PowerPoint
 
 ```bash
 node create_moodboard_pptx.js your_dj_prompts.json your_dj_input.json your_dj_colors.json
 ```
 
-Output: `your_dj_name_brand_guide.pptx` (2 slides)
+Output: `your_dj_name_brand_guide.pptx` (2 slides with embedded images)
 
 ## Output Slides
 
 ### Slide 1: Brand Moodboard
 - Title with DJ name
-- 4 image prompt boxes (2x2 grid) with labels
+- 4 generated images (2x2 grid) displayed with 16:9 aspect ratio
+- Each image labeled above
 - Brand narrative paragraph
 - Fjalla One font for headers, Helvetica Neue for body
+- Supports arbitrary number of prompts (grid expands dynamically)
 
-### Slide 2: Color Palette  
+### Slide 2: Color Palette
 - Title "BRAND COLOR PALETTE"
 - Large primary color block with label
 - 6-8 supporting color bars with hex + CMYK values
@@ -100,6 +116,10 @@ Output: `your_dj_name_brand_guide.pptx` (2 slides)
 
 ## Design Features
 
+- **All JavaScript workflow** - no Python dependencies
+- **Automatic image generation** via Fal.ai Nano Banana Pro API
+- **16:9 aspect ratio** images with proper centering
+- **Caching** - generated images are reused to save API calls
 - Clean, professional layout matching Cult Creatives template style
 - Rounded rectangles for color swatches
 - Automatic CMYK conversion from hex codes
@@ -107,12 +127,26 @@ Output: `your_dj_name_brand_guide.pptx` (2 slides)
 - Proper spacing to stay within slide borders
 - Dynamic content generation based on DJ's unique aesthetic
 
+## Environment Setup
+
+Set your Fal.ai API key before using image generation:
+
+```bash
+# Option 1: Export (persists for session)
+export FAL_KEY=your_fal_api_key_here
+
+# Option 2: Inline (one-time use)
+FAL_KEY=your_key node generate_images.js prompts.json input.json
+```
+
+Get your API key from: https://fal.ai
+
 ## Future Enhancements
 
-- Direct image generation via Fal.ai integration
 - Additional slide types (Visual Brand Pillars, Photography Style, Typography)
 - Full multi-slide brand deck generation
 - Automated end-to-end workflow
+- Support for other image generation APIs
 
 ## Example Usage
 

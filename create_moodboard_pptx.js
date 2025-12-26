@@ -236,40 +236,17 @@ function generateColorPaletteBlurb(colors, data) {
 async function createColorPaletteSlide(colors, data, pptx) {
   const slide = pptx.addSlide();
 
-  // Slide border
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0.15,
-    y: 0.15,
-    w: 9.7,
-    h: 5.35,
-    fill: { color: "FFFFFF", transparency: 100 },
-    line: { color: "CCCCCC", width: 1 }
-  });
-
   // Title (centered)
   slide.addText("BRAND COLOR PALETTE", {
     x: 0.5,
     y: 0.35,
     w: 8,
     h: 0.5,
-    fontSize: 36,
+    fontSize: 24,
     bold: true,
     color: "000000",
     fontFace: "Fjalla One",
     align: "center"
-  });
-
-  // Page number
-  slide.addText("05", {
-    x: 9,
-    y: 0.35,
-    w: 0.7,
-    h: 0.5,
-    fontSize: 28,
-    bold: true,
-    color: "000000",
-    fontFace: "Fjalla One",
-    align: "right"
   });
 
   // Primary color - smaller rounded rectangle on left
@@ -359,19 +336,6 @@ async function createColorPaletteSlide(colors, data, pptx) {
     valign: "top",
     breakLine: true
   });
-
-  // Footer - just ART DIRECTION GUIDE
-  slide.addText("ART DIRECTION GUIDE", {
-    x: 8.2,
-    y: 5.15,
-    w: 1.6,
-    h: 0.2,
-    fontSize: 11,
-    bold: true,
-    color: "000000",
-    fontFace: "Fjalla One",
-    align: "right"
-  });
 }
 
 async function createFullPresentation(prompts, colors, data, outputFile) {
@@ -407,7 +371,7 @@ async function createMoodboardSlideForDeck(pptx, prompts, data) {
     fontFace: "Fjalla One"
   });
 
-  // Image prompt boxes - 2x2 grid layout
+  // Image/prompt boxes - 2-column grid layout (supports arbitrary number of prompts)
   const boxWidth = 4.25;
   const boxHeight = 2.0;
   const startY = 1.0;
@@ -415,105 +379,78 @@ async function createMoodboardSlideForDeck(pptx, prompts, data) {
   const rightX = 5.25;
   const gap = 0.3;
 
-  // Top left - Prompt 1
-  slide.addText(`[${prompts[0].label}]`, {
-    x: leftX,
-    y: startY,
-    w: boxWidth,
-    h: 0.3,
-    fontSize: 10,
-    bold: true,
-    color: "666666",
-    fontFace: "Fjalla One"
-  });
-  slide.addText(prompts[0].prompt, {
-    x: leftX,
-    y: startY + 0.35,
-    w: boxWidth,
-    h: boxHeight - 0.35,
-    fontSize: 9,
-    color: "333333",
-    fontFace: "Helvetica Neue",
-    valign: "top",
-    fill: { color: "F5F5F5" },
-    line: { color: "CCCCCC", width: 1 }
+  // Loop through all prompts dynamically
+  prompts.forEach((prompt, i) => {
+    const row = Math.floor(i / 2);
+    const col = i % 2;
+    const x = col === 0 ? leftX : rightX;
+    const y = startY + row * (boxHeight + gap);
+
+    // Add label
+    slide.addText(`[${prompt.label}]`, {
+      x: x,
+      y: y,
+      w: boxWidth,
+      h: 0.3,
+      fontSize: 10,
+      bold: true,
+      color: "666666",
+      fontFace: "Fjalla One"
+    });
+
+    // Add image or text fallback
+    const contentY = y + 0.35;
+    const contentHeight = boxHeight - 0.35;
+
+    if (prompt.image_path && fs.existsSync(prompt.image_path)) {
+      // Image exists - display with 16:9 aspect ratio
+      const imageAspect = 16 / 9;
+      const boxAspect = boxWidth / contentHeight;
+
+      let imgW, imgH, imgX, imgY;
+
+      if (boxAspect > imageAspect) {
+        // Box is wider than 16:9 - fit to height
+        imgH = contentHeight;
+        imgW = imgH * imageAspect;
+        imgX = x + (boxWidth - imgW) / 2; // Center horizontally
+        imgY = contentY;
+      } else {
+        // Box is taller than 16:9 - fit to width
+        imgW = boxWidth;
+        imgH = imgW / imageAspect;
+        imgX = x;
+        imgY = contentY + (contentHeight - imgH) / 2; // Center vertically
+      }
+
+      slide.addImage({
+        path: prompt.image_path,
+        x: imgX,
+        y: imgY,
+        w: imgW,
+        h: imgH
+      });
+    } else {
+      // No image - show text prompt (fallback)
+      slide.addText(prompt.prompt, {
+        x: x,
+        y: contentY,
+        w: boxWidth,
+        h: contentHeight,
+        fontSize: 9,
+        color: "333333",
+        fontFace: "Helvetica Neue",
+        valign: "top",
+        fill: { color: "F5F5F5" },
+        line: { color: "CCCCCC", width: 1 }
+      });
+    }
   });
 
-  // Top right - Prompt 2
-  slide.addText(`[${prompts[1].label}]`, {
-    x: rightX,
-    y: startY,
-    w: boxWidth,
-    h: 0.3,
-    fontSize: 10,
-    bold: true,
-    color: "666666",
-    fontFace: "Fjalla One"
-  });
-  slide.addText(prompts[1].prompt, {
-    x: rightX,
-    y: startY + 0.35,
-    w: boxWidth,
-    h: boxHeight - 0.35,
-    fontSize: 9,
-    color: "333333",
-    fontFace: "Helvetica Neue",
-    valign: "top",
-    fill: { color: "F5F5F5" },
-    line: { color: "CCCCCC", width: 1 }
-  });
-
-  // Bottom left - Prompt 3
-  const bottomY = startY + boxHeight + gap;
-  slide.addText(`[${prompts[2].label}]`, {
-    x: leftX,
-    y: bottomY,
-    w: boxWidth,
-    h: 0.3,
-    fontSize: 10,
-    bold: true,
-    color: "666666",
-    fontFace: "Fjalla One"
-  });
-  slide.addText(prompts[2].prompt, {
-    x: leftX,
-    y: bottomY + 0.35,
-    w: boxWidth,
-    h: boxHeight - 0.35,
-    fontSize: 9,
-    color: "333333",
-    fontFace: "Helvetica Neue",
-    valign: "top",
-    fill: { color: "F5F5F5" },
-    line: { color: "CCCCCC", width: 1 }
-  });
-
-  // Bottom right - Prompt 4
-  slide.addText(`[${prompts[3].label}]`, {
-    x: rightX,
-    y: bottomY,
-    w: boxWidth,
-    h: 0.3,
-    fontSize: 10,
-    bold: true,
-    color: "666666",
-    fontFace: "Fjalla One"
-  });
-  slide.addText(prompts[3].prompt, {
-    x: rightX,
-    y: bottomY + 0.35,
-    w: boxWidth,
-    h: boxHeight - 0.35,
-    fontSize: 9,
-    color: "333333",
-    fontFace: "Helvetica Neue",
-    valign: "top",
-    fill: { color: "F5F5F5" },
-    line: { color: "CCCCCC", width: 1 }
-  });
-
-  // Brand narrative paragraph
-  const narrativeY = bottomY + boxHeight + gap + 0.3;
+  // Brand narrative paragraph (positioned below the last row of prompts)
+  const numRows = Math.ceil(prompts.length / 2);
+  const lastRowY = startY + (numRows - 1) * (boxHeight + gap);
+  const narrativeY = lastRowY + boxHeight + gap + 0.3;
   const narrative = generateBrandNarrative(data);
   
   slide.addText("BRAND NARRATIVE", {
