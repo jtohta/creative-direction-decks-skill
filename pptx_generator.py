@@ -56,15 +56,16 @@ def find_uploaded_images() -> list:
     return unique_images
 
 
-def create_brand_guide(dj_input, image_prompts, colors, output_path="brand_guide.pptx"):
+def create_brand_guide(dj_input, image_prompts, colors, output_path="brand_guide.pptx", visual_pillars=None):
     """
-    Create a complete 2-slide DJ brand guide PowerPoint.
+    Create a complete 3-slide DJ brand guide PowerPoint.
 
     Args:
         dj_input: Dict containing DJ questionnaire data
         image_prompts: List of dicts with "label", "prompt", and "file_id" keys
         colors: Dict with "primary" and "palette" keys
         output_path: Output file path (default: "brand_guide.pptx")
+        visual_pillars: Optional list of pillar dicts with "name" key for Slide 03
 
     Returns:
         str: Path to the created PowerPoint file
@@ -77,10 +78,14 @@ def create_brand_guide(dj_input, image_prompts, colors, output_path="brand_guide
     # Get blank slide layout
     blank_layout = prs.slide_layouts[6]  # Blank layout
 
-    # Slide 1: Brand Moodboard
+    # Slide 1: Brand Visual Pillars (if provided)
+    if visual_pillars:
+        create_visual_pillars_slide(prs, blank_layout, dj_input, visual_pillars)
+
+    # Slide 2: Brand Moodboard
     create_moodboard_slide(prs, blank_layout, dj_input, image_prompts)
 
-    # Slide 2: Color Palette
+    # Slide 3: Color Palette
     create_color_palette_slide(prs, blank_layout, dj_input, colors)
 
     # Save presentation
@@ -260,6 +265,155 @@ def add_text_fallback(slide, text, x, y, width, height):
         paragraph.font.name = "Helvetica Neue"
         paragraph.font.size = Pt(9)
         paragraph.font.color.rgb = RGBColor(51, 51, 51)
+
+
+def create_visual_pillars_slide(prs, layout, dj_input, visual_pillars):
+    """
+    Create Slide 3: Brand Visual Pillars with 4-quadrant layout.
+
+    Displays only pillar names in a 2x2 grid with divider lines.
+    Full pillar data (descriptions, characteristics) is used internally
+    for image generation but not displayed on this slide.
+
+    Args:
+        prs: Presentation object
+        layout: Blank slide layout
+        dj_input: DJ questionnaire data
+        visual_pillars: List of pillar dicts with "name" key
+    """
+    slide = prs.slides.add_slide(layout)
+
+    # Title
+    title_box = slide.shapes.add_textbox(
+        Inches(0.5), Inches(0.3), Inches(9), Inches(0.5)
+    )
+    title_frame = title_box.text_frame
+    title_frame.text = "BRAND VISUAL PILLARS"
+    title_para = title_frame.paragraphs[0]
+    title_run = title_para.runs[0]
+    title_run.font.name = "Fjalla One"
+    title_run.font.size = Pt(24)
+    title_run.font.bold = True
+    title_run.font.color.rgb = RGBColor(0, 0, 0)
+
+    # Section label
+    label_box = slide.shapes.add_textbox(
+        Inches(0.5), Inches(0.9), Inches(3), Inches(0.3)
+    )
+    label_frame = label_box.text_frame
+    label_frame.text = "[ VISUAL BRAND PILLARS ]"
+    label_para = label_frame.paragraphs[0]
+    label_run = label_para.runs[0]
+    label_run.font.name = "Fjalla One"
+    label_run.font.size = Pt(10)
+    label_run.font.bold = True
+    label_run.font.color.rgb = RGBColor(102, 102, 102)
+
+    # Description text (right side)
+    desc_box = slide.shapes.add_textbox(
+        Inches(4.0), Inches(0.9), Inches(5.5), Inches(0.4)
+    )
+    desc_frame = desc_box.text_frame
+    desc_frame.text = "The visual themes and motifs that define the brand's aesthetic direction."
+    desc_frame.word_wrap = True
+    desc_para = desc_frame.paragraphs[0]
+    desc_para.font.name = "Helvetica Neue"
+    desc_para.font.size = Pt(9)
+    desc_para.font.italic = True
+    desc_para.font.color.rgb = RGBColor(102, 102, 102)
+
+    # 4-quadrant grid layout
+    grid_top = Inches(1.5)
+    grid_left = Inches(0.5)
+    grid_width = Inches(9)
+    grid_height = Inches(3.5)
+
+    quad_width = grid_width / 2
+    quad_height = grid_height / 2
+    center_x = grid_left + quad_width
+    center_y = grid_top + quad_height
+
+    # Horizontal divider line
+    h_line = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE,
+        grid_left, center_y - Pt(0.5), grid_width, Pt(1)
+    )
+    h_line.fill.solid()
+    h_line.fill.fore_color.rgb = RGBColor(200, 200, 200)
+    h_line.line.fill.background()
+
+    # Vertical divider line
+    v_line = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE,
+        center_x - Pt(0.5), grid_top, Pt(1), grid_height
+    )
+    v_line.fill.solid()
+    v_line.fill.fore_color.rgb = RGBColor(200, 200, 200)
+    v_line.line.fill.background()
+
+    # Pillar positions (top-left, top-right, bottom-left, bottom-right)
+    positions = [
+        (grid_left, grid_top, quad_width, quad_height),                    # Top-left
+        (center_x, grid_top, quad_width, quad_height),                     # Top-right
+        (grid_left, center_y, quad_width, quad_height),                    # Bottom-left
+        (center_x, center_y, quad_width, quad_height),                     # Bottom-right
+    ]
+
+    # Add pillar names to each quadrant
+    for i, pillar in enumerate(visual_pillars):
+        if i >= 4:
+            break
+
+        x, y, w, h = positions[i]
+        pillar_name = pillar.get('name', pillar) if isinstance(pillar, dict) else str(pillar)
+
+        # Create text box centered in quadrant
+        text_box = slide.shapes.add_textbox(x, y, w, h)
+        text_frame = text_box.text_frame
+        text_frame.text = pillar_name.upper()
+
+        # Center text vertically and horizontally
+        text_frame.word_wrap = True
+        para = text_frame.paragraphs[0]
+        para.alignment = PP_ALIGN.CENTER
+        para.space_before = Pt(0)
+        para.space_after = Pt(0)
+
+        # Add vertical centering by adjusting margins
+        text_frame.margin_top = int(h / 2 - Pt(12))
+        text_frame.margin_bottom = Pt(0)
+        text_frame.margin_left = Inches(0.2)
+        text_frame.margin_right = Inches(0.2)
+
+        run = para.runs[0]
+        run.font.name = "Fjalla One"
+        run.font.size = Pt(18)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0, 0, 0)
+
+    # Footer text
+    footer_box = slide.shapes.add_textbox(
+        Inches(0.5), Inches(5.2), Inches(7), Inches(0.3)
+    )
+    footer_frame = footer_box.text_frame
+    footer_frame.text = "These pillars guide all visual decision-making for the brand identity."
+    footer_para = footer_frame.paragraphs[0]
+    footer_para.font.name = "Helvetica Neue"
+    footer_para.font.size = Pt(8)
+    footer_para.font.color.rgb = RGBColor(153, 153, 153)
+
+    # Page indicator
+    page_box = slide.shapes.add_textbox(
+        Inches(9.0), Inches(5.2), Inches(0.5), Inches(0.3)
+    )
+    page_frame = page_box.text_frame
+    page_frame.text = "03"
+    page_para = page_frame.paragraphs[0]
+    page_para.alignment = PP_ALIGN.RIGHT
+    page_run = page_para.runs[0]
+    page_run.font.name = "Helvetica Neue"
+    page_run.font.size = Pt(10)
+    page_run.font.color.rgb = RGBColor(153, 153, 153)
 
 
 def create_color_palette_slide(prs, layout, dj_input, colors):

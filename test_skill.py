@@ -135,9 +135,17 @@ def test_pptx_generator():
         "description": "This brand embodies oceanic, mysterious, hypnotic energy through its color palette. Deep Ocean Blue serves as the foundational anchor, establishing the core atmosphere of otherworldly exploration. Supporting tones — electric cyan, purple glow — create depth and nuance, evoking the feeling of exploring an alien underwater world. These colors speak to a sonic identity rooted in deep house and progressive techno.\n\nWithin this carefully curated world, moments of intensity emerge. Bright cyan and purple glow cut through the atmosphere, adding punctuation and emotional peaks without disrupting the flow."
     }
 
-    # Generate PowerPoint
+    # Visual pillars (new Slide 03)
+    visual_pillars = [
+        {"name": "DOCUMENTED REALITY"},
+        {"name": "LIQUID GEOMETRY"},
+        {"name": "SENSORY ARCHAEOLOGY"},
+        {"name": "POST-EXTRACTIVE AESTHETICS"}
+    ]
+
+    # Generate PowerPoint with visual pillars
     output_path = "test_brand_guide.pptx"
-    result = create_brand_guide(dj_input, image_prompts, colors, output_path)
+    result = create_brand_guide(dj_input, image_prompts, colors, output_path, visual_pillars=visual_pillars)
 
     assert os.path.exists(result), f"PowerPoint file should be created at {result}"
     print(f"✓ PowerPoint created successfully: {result}")

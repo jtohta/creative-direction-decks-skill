@@ -18,15 +18,15 @@ def hex_to_cmyk(hex_color):
         >>> hex_to_cmyk("#0A1F44")
         {'c': 85, 'm': 54, 'y': 0, 'k': 73}
     """
-    # Remove '#' if present
+    # Strip the hash prefix if present (supports both "#RRGGBB" and "RRGGBB" formats)
     hex_color = hex_color.lstrip('#')
 
-    # Convert hex to RGB (0-1 range)
+    # Parse hex string into RGB components, normalized to 0-1 range for CMYK math
     r = int(hex_color[0:2], 16) / 255.0
     g = int(hex_color[2:4], 16) / 255.0
     b = int(hex_color[4:6], 16) / 255.0
 
-    # Convert RGB to CMYK
+    # K (key/black) is derived from the brightest RGB channel
     k = 1 - max(r, g, b)
 
     if k == 1:
@@ -47,25 +47,18 @@ def hex_to_cmyk(hex_color):
 
 
 def hex_to_rgb(hex_color):
-    """
-    Convert hex color code to RGB tuple.
-
-    Args:
-        hex_color: Hex color string (e.g., "#0A1F44" or "0A1F44")
-
-    Returns:
-        tuple: RGB values (r, g, b) in range 0-255
-
-    Example:
-        >>> hex_to_rgb("#0A1F44")
-        (10, 31, 68)
-    """
+    """Convert hex color code to RGB tuple."""
     hex_color = hex_color.lstrip('#')
     return (
         int(hex_color[0:2], 16),
         int(hex_color[2:4], 16),
         int(hex_color[4:6], 16)
     )
+
+
+def rgb_to_hex(r, g, b):
+    """Convert RGB values to hex color string."""
+    return "#{:02x}{:02x}{:02x}".format(r, g, b).upper()
 
 
 def is_light_color(hex_color):

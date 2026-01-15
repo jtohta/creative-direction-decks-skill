@@ -1,11 +1,11 @@
 ---
 name: dj-brand-guide-generator
-description: Generates professional 2-slide PowerPoint presentations from DJ brand questionnaire data. Creates brand moodboard slide with 2x2 image grid and narrative, plus color palette slide with hex/CMYK values. Use when generating DJ brand guides or music artist presentation decks.
+description: Generates professional 3-slide PowerPoint presentations from DJ brand questionnaire data. Creates visual pillars slide with 4-quadrant layout, brand moodboard slide with 2x2 image grid and narrative, plus color palette slide with hex/CMYK values. Use when generating DJ brand guides or music artist presentation decks.
 ---
 
 # DJ Brand Guide Generator
 
-Generates professional 2-slide PowerPoint presentations for DJ/artist brands. Creates a brand moodboard with image grid and narrative, plus a color palette slide with hex and CMYK values.
+Generates professional 3-slide PowerPoint presentations for DJ/artist brands. Creates a visual pillars slide with strategic brand principles, a brand moodboard with image grid and narrative, plus a color palette slide with hex and CMYK values.
 
 ## Quick Start
 
@@ -78,21 +78,42 @@ colors = {
     "description": "This brand embodies oceanic, mysterious, hypnotic energy through its color palette. Deep Ocean Blue serves as the foundational anchor, establishing the core atmosphere of otherworldly explorer of sonic depths. Supporting tones — electric cyan, purple glow — create depth and nuance, evoking like they're exploring an alien underwater world. These colors speak to a sonic identity rooted in deep house, progressive, techno.\\n\\nWithin this carefully curated world, moments of intensity emerge. Bright accent and white cut through the atmosphere, adding punctuation and emotional peaks without disrupting the flow."
 }
 
+# Visual pillars (generated via Claude API)
+visual_pillars = [
+    {"name": "DOCUMENTED REALITY"},
+    {"name": "LIQUID GEOMETRY"},
+    {"name": "SENSORY ARCHAEOLOGY"},
+    {"name": "POST-EXTRACTIVE AESTHETICS"}
+]
+
 # Generate PowerPoint
-output_file = create_brand_guide(dj_input, image_prompts, colors, output_path="brand_guide.pptx")
+output_file = create_brand_guide(
+    dj_input,
+    image_prompts,
+    colors,
+    output_path="brand_guide.pptx",
+    visual_pillars=visual_pillars
+)
 print(f"Created: {output_file}")
 ```
 
 ## Capabilities
 
-### Slide 1: Brand Moodboard
+### Slide 1: Brand Visual Pillars
+- **4-Quadrant Layout**: Strategic visual pillars displayed in 2x2 grid
+- **Pillar Names Only**: Shows only pillar names (full data used internally for image generation)
+- **Divider Lines**: Cross dividers separate quadrants
+- **Section Label**: "[ VISUAL BRAND PILLARS ]" header with description
+- **Design**: Fjalla One for pillar names, centered in each quadrant
+
+### Slide 2: Brand Moodboard
 - **2x2 Image Grid**: Supports arbitrary number of images in 2-column layout
 - **16:9 Aspect Ratio**: Images automatically centered and fitted
 - **Image Labels**: Each image labeled above the box
 - **Brand Narrative**: Auto-generated 2-paragraph narrative from DJ input
 - **Design**: Fjalla One headers, Helvetica Neue body text
 
-### Slide 2: Color Palette
+### Slide 3: Color Palette
 - **Primary Color Block**: Large rounded rectangle with hex + CMYK values
 - **Palette Bars**: 6-8 stacked color bars with automatic text contrast
 - **CMYK Conversion**: Automatic hex to CMYK percentage conversion
@@ -112,6 +133,8 @@ print(f"Created: {output_file}")
 - Supports file_id references for images uploaded via Files API
 - Fallback to text prompts if images unavailable
 - Automatic CMYK conversion for print specifications
+- Optional `visual_pillars` parameter adds Visual Pillars slide when provided
+- Visual pillars are generated first in the pipeline to guide image generation
 
 See [REFERENCE.md](REFERENCE.md) for complete API documentation.
 
