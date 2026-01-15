@@ -214,6 +214,7 @@ narrative = generate_brand_narrative(dj_input)
     "visual_references": [str, ...],     # Required
     "forms_and_textures": [str, ...],    # Required
     "brand_positioning": str,            # Optional, default: "a unique sonic journey"
+    "brand_narrative": str,              # Optional, pre-generated 2-paragraph narrative (~170 words)
     "existing_visuals": str              # Optional
 }
 ```

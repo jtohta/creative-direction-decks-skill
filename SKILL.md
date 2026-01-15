@@ -29,7 +29,8 @@ dj_input = {
     },
     "visual_references": ["bioluminescent creatures", "deep sea scenes"],
     "forms_and_textures": ["organic flowing forms", "liquid", "ethereal"],
-    "brand_positioning": "otherworldly explorer of sonic depths"
+    "brand_positioning": "otherworldly explorer of sonic depths",
+    "brand_narrative": "This brand lives at the intersection of oceanic depth and mysterious discovery. Its visual world is rooted in deep ocean — compositions that evoke alien underwater exploration.\n\nBut within that foundation, there's contrast — moments of revelation that punctuate the journey. Aqua Voyager embodies otherworldly sonic exploration, where every visual element serves the story."
 }
 
 # Image prompts (already generated via Claude API + Fal.ai)

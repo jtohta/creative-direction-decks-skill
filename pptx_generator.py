@@ -95,12 +95,15 @@ def create_brand_guide(dj_input, image_prompts, colors, output_path="brand_guide
 
 def create_moodboard_slide(prs, layout, dj_input, image_prompts):
     """
-    Create Slide 1: Brand Moodboard with 2x2 image grid and narrative.
+    Create Slide 1: Brand Moodboard with 2x2 image grid and narrative column.
+
+    Layout: Images in left 2/3, narrative in right column (~3" wide).
+    Narrative is ~170 words in Cult Creatives style.
 
     Args:
         prs: Presentation object
         layout: Blank slide layout
-        dj_input: DJ questionnaire data
+        dj_input: DJ questionnaire data (includes 'brand_narrative' key)
         image_prompts: List of image prompt dicts with label and prompt
     """
     slide = prs.slides.add_slide(layout)
@@ -123,88 +126,90 @@ def create_moodboard_slide(prs, layout, dj_input, image_prompts):
     title_run.font.bold = True
     title_run.font.color.rgb = RGBColor(0, 0, 0)
 
-    # Image/prompt boxes - 2-column grid layout
-    box_width = Inches(4.25)
-    box_height = Inches(2.0)
+    # Layout: 2x2 image grid on left, narrative column on right
+    # Slide is 10" x 5.625" (16:9)
+    img_box_width = Inches(2.9)
+    img_box_height = Inches(2.0)
     start_y = Inches(1.0)
     left_x = Inches(0.5)
-    right_x = Inches(5.25)
-    gap = Inches(0.3)
+    img_right_x = Inches(3.5)  # Second column of images
+    img_gap = Inches(0.25)
 
-    # Loop through all prompts dynamically (supports arbitrary number)
-    for i, prompt in enumerate(image_prompts):
+    # Narrative column on far right
+    narrative_x = Inches(6.6)
+    narrative_width = Inches(3.0)
+
+    # Loop through image prompts (2x2 grid)
+    for i, prompt in enumerate(image_prompts[:4]):  # Limit to 4 images
         row = i // 2
         col = i % 2
-        x = left_x if col == 0 else right_x
-        y = start_y + row * (box_height + gap)
+        x = left_x if col == 0 else img_right_x
+        y = start_y + row * (img_box_height + img_gap)
 
         # Add label
-        label_box = slide.shapes.add_textbox(x, y, box_width, Inches(0.3))
+        label_box = slide.shapes.add_textbox(x, y, img_box_width, Inches(0.25))
         label_frame = label_box.text_frame
         label_frame.text = f"[{prompt['label']}]"
         label_para = label_frame.paragraphs[0]
         label_run = label_para.runs[0]
         label_run.font.name = "Fjalla One"
-        label_run.font.size = Pt(10)
+        label_run.font.size = Pt(9)
         label_run.font.bold = True
         label_run.font.color.rgb = RGBColor(102, 102, 102)
 
         # Add image or text fallback
-        content_y = y + Inches(0.35)
-        content_height = box_height - Inches(0.35)
+        content_y = y + Inches(0.3)
+        content_height = img_box_height - Inches(0.3)
 
         # Try to use uploaded image from sandbox filesystem
-        # Images are added in order via container_upload, so index should match
         if i < len(uploaded_images):
             image_path = uploaded_images[i]
             print(f"[DEBUG] Using uploaded image for prompt {i}: {image_path}")
             try:
                 add_image_with_aspect_ratio(
-                    slide, image_path, x, content_y, box_width, content_height
+                    slide, image_path, x, content_y, img_box_width, content_height
                 )
             except Exception as e:
                 print(f"[ERROR] Failed to add image {image_path}: {e}")
-                add_text_fallback(slide, prompt['prompt'], x, content_y, box_width, content_height)
+                add_text_fallback(slide, prompt['prompt'], x, content_y, img_box_width, content_height)
         elif 'path' in prompt and os.path.exists(prompt.get('path', '')):
             # Local file path fallback (for testing)
             add_image_with_aspect_ratio(
-                slide, prompt['path'], x, content_y, box_width, content_height
+                slide, prompt['path'], x, content_y, img_box_width, content_height
             )
         else:
             # No image available - show text prompt
             print(f"[DEBUG] No image found for prompt {i}, using text fallback")
-            add_text_fallback(slide, prompt['prompt'], x, content_y, box_width, content_height)
+            add_text_fallback(slide, prompt['prompt'], x, content_y, img_box_width, content_height)
 
-    # Brand narrative paragraph (positioned below the last row)
-    num_rows = (len(image_prompts) + 1) // 2  # Ceiling division
-    last_row_y = start_y + (num_rows - 1) * (box_height + gap)
-    narrative_y = last_row_y + box_height + gap + Inches(0.3)
+    # Brand narrative in right column (alongside images)
     narrative = generate_brand_narrative(dj_input)
 
     # Narrative title
     narrative_title_box = slide.shapes.add_textbox(
-        right_x, narrative_y, box_width, Inches(0.25)
+        narrative_x, start_y, narrative_width, Inches(0.3)
     )
     narrative_title_frame = narrative_title_box.text_frame
     narrative_title_frame.text = "BRAND NARRATIVE"
     narrative_title_para = narrative_title_frame.paragraphs[0]
     narrative_title_run = narrative_title_para.runs[0]
     narrative_title_run.font.name = "Fjalla One"
-    narrative_title_run.font.size = Pt(12)
+    narrative_title_run.font.size = Pt(11)
     narrative_title_run.font.bold = True
     narrative_title_run.font.color.rgb = RGBColor(0, 0, 0)
 
-    # Narrative text
+    # Narrative text (full height to accommodate ~170 words)
     narrative_text_box = slide.shapes.add_textbox(
-        right_x, narrative_y + Inches(0.3), box_width, Inches(1.2)
+        narrative_x, start_y + Inches(0.35), narrative_width, Inches(4.0)
     )
     narrative_text_frame = narrative_text_box.text_frame
     narrative_text_frame.text = narrative
     narrative_text_frame.word_wrap = True
     for paragraph in narrative_text_frame.paragraphs:
         paragraph.font.name = "Helvetica Neue"
-        paragraph.font.size = Pt(10)
+        paragraph.font.size = Pt(9)
         paragraph.font.color.rgb = RGBColor(51, 51, 51)
+        paragraph.line_spacing = 1.15
 
 
 def add_image_with_aspect_ratio(slide, image_path, x, y, box_width, box_height):
